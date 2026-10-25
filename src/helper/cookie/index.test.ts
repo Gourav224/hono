@@ -386,6 +386,26 @@ describe('Cookie Middleware', () => {
       const header = res.headers.get('Set-Cookie')
       expect(header).toBe('delicious_cookie=macha; Path=/, delicious_cookie=choco; Path=/')
     })
+
+    it('Should validate cookie name prefixes case-insensitively', async () => {
+      const app = new Hono()
+      app.get('/:name', (c) => {
+        setCookie(c, c.req.param('name'), 'macha')
+        return c.text('Give cookie')
+      })
+      app.onError((err, c) => c.text(err.message, 500))
+
+      for (const name of ['__secure-cookie', '__SECURE-cookie']) {
+        const res = await app.request(`http://localhost/${name}`)
+        expect(res.status).toBe(500)
+        expect(await res.text()).toBe('__Secure- Cookie must have Secure attributes')
+      }
+      for (const name of ['__host-cookie', '__HOST-cookie']) {
+        const res = await app.request(`http://localhost/${name}`)
+        expect(res.status).toBe(500)
+        expect(await res.text()).toBe('__Host- Cookie must have Secure attributes')
+      }
+    })
   })
 
   describe('Delete cookie', () => {

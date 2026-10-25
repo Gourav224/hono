@@ -383,6 +383,31 @@ describe('Set cookie', () => {
     }).toThrowError('Partitioned Cookie must have Secure attributes')
   })
 
+  it.each(['__Secure-', '__secure-', '__SECURE-'])(
+    'Should throw Error %s cookie without Secure attributes',
+    (prefix) => {
+      expect(() => {
+        serialize(`${prefix}great_cookie`, 'banana')
+      }).toThrowError('__Secure- Cookie must have Secure attributes')
+    }
+  )
+
+  it.each(['__Host-', '__host-', '__HOST-'])(
+    'Should throw Error %s cookie without required attributes',
+    (prefix) => {
+      const name = `${prefix}great_cookie`
+      expect(() => {
+        serialize(name, 'banana', { path: '/' })
+      }).toThrowError('__Host- Cookie must have Secure attributes')
+      expect(() => {
+        serialize(name, 'banana', { secure: true })
+      }).toThrowError('__Host- Cookie must have Path attributes with "/"')
+      expect(() => {
+        serialize(name, 'banana', { secure: true, path: '/', domain: 'example.com' })
+      }).toThrowError('__Host- Cookie must not have Domain attributes')
+    }
+  )
+
   it('Should throw Error cookie with domain, path, sameSite, or priority containing ";", "\\r", or "\\n"', () => {
     // domain
     expect(() => {
